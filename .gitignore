@@ -1,0 +1,12 @@
+# 构建产物
+.build/
+dist/
+
+# 由 build.sh 从 Assets/icon.png 生成的图标产物
+Sources/DSBar/Resources/AppIcon.icns
+Sources/DSBar/Resources/statusbar.png
+Sources/DSBar/Resources/statusbar@2x.png
+Sources/DSBar/Resources/icon.iconset/
+
+# macOS
+.DS_Store
