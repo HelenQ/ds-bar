@@ -6,7 +6,7 @@ enum AppConstants {
     static let appName = "DS Bar"
 
     /// 版本号（与 Info.plist 中 CFBundleShortVersionString 保持一致）
-    static let version = "1.0.0"
+    static let version = "0.0.1"
 
     /// 版权信息
     static let copyright = "Copyright © 2026 hy"
