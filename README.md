@@ -32,6 +32,7 @@ chmod +x build.sh
 ```
 
 产物位于 `dist/DSBar.app`，构建脚本会自动执行 ad-hoc 签名（`SMAppService` 需要）。
+设置 `SIGN_IDENTITY` 环境变量可改用 `Developer ID` 证书签名（用于正式分发，见下文「正式分发」）。
 
 ## 安装
 
@@ -40,6 +41,30 @@ chmod +x build.sh
 首次从其他位置启动时，应用会弹出**拖拽安装引导窗口**，可以直接把应用图标拖到「应用程序」文件夹上，或点击「帮我移动到应用程序文件夹」自动完成。
 
 > 开机自启动依赖应用位于 `/Applications` 目录，请先完成安装再启用该功能。
+
+### 首次打开被系统拦截？
+
+应用使用 ad-hoc 签名（未经过 Apple 公证），从网络下载后首次打开会被 Gatekeeper 拦截，提示「无法验证开发者」或「已损坏」。任选一种方式放行：
+
+- 在 Finder 中**右键点击** `DSBar.app` → **打开** → 在弹窗中再次点击「打开」
+- 或：系统设置 → 隐私与安全性 → 在「安全性」区域点击「仍要打开」
+- 或：终端执行 `sudo xattr -dr com.apple.quarantine /Applications/DSBar.app`
+
+放行后请用 **Finder 拖拽**把 app 移入「应用程序」文件夹，或点击引导窗口的「帮我移动到应用程序文件夹」。
+
+> 用 `mv` / `cp` 命令移动**不会**清除隔离属性：带隔离属性的 app 会被 App Translocation 以
+> `/private/var/folders/.../AppTranslocation/...` 路径运行，安装检测会持续判定「未安装」，
+> 每次启动都重复弹出安装引导。
+
+### 正式分发（可选）
+
+若要免除用户的手动放行，需要 Apple Developer Program 账号并提供 `Developer ID Application` 证书：
+
+```bash
+SIGN_IDENTITY="Developer ID Application: 你的名字 (TEAMID)" ./build.sh universal
+xcrun notarytool submit DSBar.zip --keychain-profile <profile> --wait   # 公证
+xcrun stapler staple dist/DSBar.app                                    # 装订公证票据
+```
 
 ## 使用方式
 

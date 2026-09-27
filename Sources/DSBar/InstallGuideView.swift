@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import Darwin
 
 // MARK: - 安装引导窗口
 
@@ -181,24 +182,49 @@ struct InstallGuideView: View {
             do {
                 try FileManager.default.copyItem(at: sourceURL, to: destURL)
 
+                // 程序化拷贝会保留 com.apple.quarantine，而该属性会触发
+                // App Translocation —— 副本即使位于 /Applications，也仍会以
+                // /private/var/folders/.../AppTranslocation/... 路径运行，
+                // 导致安装检测持续判定「未安装」，引导窗口反复弹出。
+                // 只有 Finder 拖动才会打上「禁止 translocate」标志，故此处直接清除。
+                InstallGuideView.removeQuarantine(at: destURL)
+
                 DispatchQueue.main.async {
-                    isMoving = false
                     // 启动 /Applications 下的副本
                     let config = NSWorkspace.OpenConfiguration()
                     config.activates = true
                     NSWorkspace.shared.openApplication(at: destURL, configuration: config) { _, error in
-                        if let error = error {
-                            print("InstallGuide: Failed to launch from /Applications: \(error)")
+                        DispatchQueue.main.async {
+                            isMoving = false
+                            if let error = error {
+                                print("InstallGuide: Failed to launch from /Applications: \(error)")
+                                moveError = "启动失败：\(error.localizedDescription)，请手动拖拽安装"
+                            } else {
+                                // 启动成功后再退出当前实例
+                                NSApp.terminate(nil)
+                            }
                         }
                     }
-                    // 退出当前实例
-                    NSApp.terminate(nil)
                 }
             } catch {
                 DispatchQueue.main.async {
                     isMoving = false
                     moveError = "移动失败：\(error.localizedDescription)"
                 }
+            }
+        }
+    }
+
+    /// 递归清除隔离属性，等价于 `xattr -dr com.apple.quarantine`
+    private static func removeQuarantine(at url: URL) {
+        let keys = ["com.apple.quarantine", "com.apple.provenance"]
+        var targets = [url]
+        if let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: nil) {
+            targets.append(contentsOf: enumerator.compactMap { $0 as? URL })
+        }
+        for target in targets {
+            for key in keys {
+                removexattr(target.path, key, 0)
             }
         }
     }

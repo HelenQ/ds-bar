@@ -22,6 +22,8 @@ APP_NAME="DSBar.app"
 # SDK 路径：优先 xcrun，fallback 到 CLT 默认路径
 SDK_PATH=$(xcrun --show-sdk-path 2>/dev/null || echo "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
 DEPLOYMENT_TARGET="13.0"
+# 签名身份：默认 ad-hoc（-）；设置为 Developer ID Application 证书名可正式分发
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 
 SOURCES=(
     "Sources/DSBar/DSBarApp.swift"
@@ -163,11 +165,20 @@ create_app_bundle() {
 
     echo -n "APPL????" > "$OUTPUT_DIR/$APP_NAME/Contents/PkgInfo"
 
-    # 对 .app 进行 ad-hoc 签名，SMAppService 要求应用有签名
-    log_info "对 .app 进行 ad-hoc 签名..."
-    codesign --force --deep --sign - "$OUTPUT_DIR/$APP_NAME" 2>&1 || {
-        log_warn "ad-hoc 签名失败，开机自启动功能可能受影响"
-    }
+    if [ "$SIGN_IDENTITY" = "-" ]; then
+        # 对 .app 进行 ad-hoc 签名，SMAppService 要求应用有签名
+        log_info "对 .app 进行 ad-hoc 签名..."
+        codesign --force --deep --sign - "$OUTPUT_DIR/$APP_NAME" 2>&1 || {
+            log_warn "ad-hoc 签名失败，开机自启动功能可能受影响"
+        }
+    else
+        # Developer ID 签名：公证要求 hardened runtime
+        log_info "使用 Developer ID 签名: $SIGN_IDENTITY"
+        codesign --force --deep --options runtime --sign "$SIGN_IDENTITY" "$OUTPUT_DIR/$APP_NAME" 2>&1 || {
+            log_error "签名失败: $SIGN_IDENTITY"
+            exit 1
+        }
+    fi
 
     log_success ".app 包已创建: $OUTPUT_DIR/$APP_NAME ($arch_label)"
 
