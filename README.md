@@ -2,6 +2,8 @@
 
 DeepSeek Chat 菜单栏快捷工具 —— 在 macOS 菜单栏常驻，一键打开 DeepSeek Chat。
 
+![preview](Assets/preview.png)
+
 ## 功能特性
 
 - 🔄 **菜单栏常驻** — 启动后驻留在菜单栏，不占用 Dock
