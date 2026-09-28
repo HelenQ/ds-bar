@@ -3,7 +3,7 @@ import WebKit
 
 // MARK: - AppDelegate
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     var statusItem: NSStatusItem!
     var popover: NSPopover!
     var popoverWebView: WKWebView?
@@ -51,6 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let initialSize = WindowSizeManager.shared.currentWindowSize
         popover.contentSize = initialSize
         popover.behavior = .transient
+        popover.delegate = self
         popover.contentViewController = NSViewController()
         self.popover = popover
     }
@@ -77,7 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if popover.isShown {
                 popover.performClose(nil)
             } else {
-                let size = WindowSizeManager.shared.currentWindowSize
+                let size = fittedPopoverSize(for: WindowSizeManager.shared.currentWindowSize)
                 popover.contentSize = size
 
                 // 复用已有的 webView，如果不存在则创建
@@ -99,6 +100,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             }
         }
+    }
+
+    // MARK: - NSPopoverDelegate
+
+    /// 弹窗的窗口层级默认高于输入法候选窗：在 webview 里输入中文时，
+    /// 候选词列表会被弹窗自己盖住，看不见候选词。
+    /// 展示完成后把弹窗降到 .floating：仍浮在其它 App 的普通窗口之上（弹窗窗口是
+    /// 非激活面板，本 App 没被激活时 .normal 会被前台 App 的窗口盖住），
+    /// 但低于输入法候选窗，候选词就能回到弹窗之上。
+    func popoverDidShow(_ notification: Notification) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self,
+                  let window = self.popover.contentViewController?.view.window else { return }
+            window.level = .floating
+            Logger.debug("popover shown: level=\(window.level.rawValue) isShown=\(self.popover.isShown)", category: "Popover")
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                guard let self = self,
+                      let window = self.popover.contentViewController?.view.window else { return }
+                Logger.debug("popover +1s: level=\(window.level.rawValue) visible=\(window.isVisible) isShown=\(self.popover.isShown)",
+                             category: "Popover")
+            }
+        }
+    }
+
+    /// 弹窗锚定在菜单栏下方：尺寸超出屏幕可用区域时会压到 Dock 上，
+    /// 而 .floating 层级的弹窗仍在 Dock 之下（网页底部的输入框会被 Dock 遮住），因此按屏幕可用区域收窄。
+    private func fittedPopoverSize(for requested: NSSize) -> NSSize {
+        guard let screen = statusItem.button?.window?.screen ?? NSScreen.main else {
+            return requested
+        }
+        // 为弹窗箭头、阴影和 Dock 预留余量
+        let availableWidth = max(320, screen.visibleFrame.width - 24)
+        let availableHeight = max(240, screen.visibleFrame.height - 24)
+        return NSSize(width: min(requested.width, availableWidth),
+                      height: min(requested.height, availableHeight))
     }
 
     func showContextMenu() {
