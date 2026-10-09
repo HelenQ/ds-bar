@@ -112,18 +112,14 @@ enum LaunchAtLoginManager {
                 }
                 return "请在\"系统设置 > 通用 > 登录项\"中允许 \(AppConstants.appName)"
 
-            case .notFound:
-                log("  Status is .notFound, app signature or location issue")
-                // SMAppService 找不到应用，可能是签名或位置问题，fallback 到 legacy
-                return setEnabledLegacy(enabled)
-
             default:
-                // register 抛了异常，且状态不是上述情况
-                if !smAppServiceSucceeded {
-                    log("  SMAppService register failed, trying legacy fallback")
-                    return setEnabledLegacy(enabled)
+                // 只有 SMAppService 压根没注册成功时才回退到 AppleScript：
+                // 注册已经成功却再补一条 legacy 登录项，会让两套机制各拉起一份进程。
+                guard !smAppServiceSucceeded else {
+                    log("  Registered but status is \(statusDescription(newStatus)), not falling back to legacy")
+                    return "开机自启动注册未生效（状态：\(statusDescription(newStatus))），请检查应用是否位于 /Applications 且签名有效"
                 }
-                log("  Unexpected status after register: \(statusDescription(newStatus))")
+                log("  SMAppService register failed (status: \(statusDescription(newStatus))), trying legacy fallback")
                 return setEnabledLegacy(enabled)
             }
 
