@@ -28,6 +28,8 @@ SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 SOURCES=(
     "Sources/DSBar/DSBarApp.swift"
     "Sources/DSBar/AppConstants.swift"
+    "Sources/DSBar/ChatSite.swift"
+    "Sources/DSBar/ChatSiteManager.swift"
     "Sources/DSBar/AppDelegate.swift"
     "Sources/DSBar/Logger.swift"
     "Sources/DSBar/WindowSizeManager.swift"

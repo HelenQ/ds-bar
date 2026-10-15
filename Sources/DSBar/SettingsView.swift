@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject var windowManager: WindowSizeManager
     @State private var launchAtLogin = LaunchAtLoginManager.isEnabled
     @State private var launchError: String?
+    @State private var selectedSite = ChatSiteManager.shared.selectedSite
 
     var body: some View {
         TabView {
@@ -92,13 +93,23 @@ struct SettingsView: View {
             }
 
             Section(header: Label("网页", systemImage: "globe").font(.headline)) {
-                LabeledContent("DeepSeek Chat URL") {
-                    Text(AppConstants.defaultChatURL)
+                Picker("聊天站点", selection: $selectedSite) {
+                    ForEach(ChatSite.allCases) { site in
+                        Text(site.displayName).tag(site)
+                    }
+                }
+                .onChange(of: selectedSite) { newValue in
+                    // 记住选择，下次打开弹窗加载所选站点
+                    ChatSiteManager.shared.selectedSite = newValue
+                }
+
+                LabeledContent("站点地址") {
+                    Text(selectedSite.url)
                         .foregroundColor(.secondary)
                         .textSelection(.enabled)
                 }
 
-                Text("当前版本仅支持 DeepSeek Chat 官方地址")
+                Text("切换站点后，下次打开弹窗将加载所选站点")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -240,13 +251,14 @@ struct SettingsView: View {
             Text("版本 \(AppConstants.version)")
                 .foregroundColor(.secondary)
 
-            Text("DeepSeek Chat 菜单栏快捷工具")
+            Text("AI 聊天菜单栏快捷工具")
                 .foregroundColor(.secondary)
 
             Spacer()
 
             VStack(alignment: .leading, spacing: 4) {
-                Label("在菜单栏常驻，一键打开 DeepSeek Chat", systemImage: "menubar.arrow.up.rectangle")
+                Label("在菜单栏常驻，一键打开聊天页面", systemImage: "menubar.arrow.up.rectangle")
+                Label("支持 DeepSeek Chat / 通义千问", systemImage: "globe")
                 Label("支持窗口大小预设（16:9 / 9:16）", systemImage: "arrow.up.left.and.arrow.down.right")
                 Label("支持开机自启动配置", systemImage: "power")
                 Label("支持 Intel 和 Apple Silicon", systemImage: "cpu")

@@ -15,6 +15,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// WKWebView.navigationDelegate 为 weak 引用，需强持有避免立即释放
     private let navigationDelegate = AppNavigationDelegate()
 
+    /// popoverWebView 当前加载的站点，切换站点后需重新加载
+    private var loadedSite: ChatSite?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 隐藏 Dock 图标，使应用仅驻留在菜单栏
         NSApp.setActivationPolicy(.accessory)
@@ -82,17 +85,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 popover.contentSize = size
 
                 // 复用已有的 webView，如果不存在则创建
+                let site = ChatSiteManager.shared.selectedSite
                 let webView: WKWebView
                 if let existing = popoverWebView {
                     webView = existing
-                    // 刷新到当前应加载的 URL（如果 webView 还没加载过任何页面）
-                    if existing.url == nil {
+                    // 加载应打开的 URL：webView 还没加载过任何页面，
+                    // 或用户在设置中切换了站点导致当前页面不再匹配
+                    if existing.url == nil || loadedSite != site {
                         loadURLInWebView(existing, urlString: NavigationHistoryManager.shared.urlToLoad())
                     }
                 } else {
                     webView = createWebView(urlString: NavigationHistoryManager.shared.urlToLoad())
                     popoverWebView = webView
                 }
+                loadedSite = site
 
                 webView.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
                 popover.contentViewController?.view = webView
@@ -169,10 +175,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     // MARK: - 创建 WebView
 
     func createWebView(urlString: String) -> WKWebView {
-        WebViewFactory.create(urlString: urlString, navigationDelegate: navigationDelegate)
+        // 导航代理持有站点，策略按页面所属站点判定
+        navigationDelegate.site = ChatSiteManager.shared.selectedSite
+        return WebViewFactory.create(urlString: urlString, navigationDelegate: navigationDelegate)
     }
 
     func loadURLInWebView(_ webView: WKWebView, urlString: String) {
+        navigationDelegate.site = ChatSiteManager.shared.selectedSite
         WebViewFactory.loadURL(webView, urlString: urlString)
     }
 

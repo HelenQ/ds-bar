@@ -14,15 +14,6 @@ enum AppConstants {
     /// Bundle Identifier
     static let bundleIdentifier = "com.deepseek.dsbar"
 
-    /// DeepSeek Chat 默认 URL
-    static let defaultChatURL = "https://chat.deepseek.com/"
-
-    /// DeepSeek 允许的域名列表（用于 WebView 导航策略限制）
-    static let allowedDomains = [
-        "chat.deepseek.com",
-        "deepseek.com"
-    ]
-
     // MARK: - 窗口尺寸
 
     /// 状态栏图标尺寸
@@ -41,5 +32,6 @@ enum AppConstants {
         static let customWidth = "customWidth"
         static let customHeight = "customHeight"
         static let lastVisitedURL = "lastVisitedURL"
+        static let selectedChatSite = "selectedChatSite"
     }
 }

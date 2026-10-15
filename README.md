@@ -1,13 +1,13 @@
 # DS Bar
 
-DeepSeek Chat 菜单栏快捷工具 —— 在 macOS 菜单栏常驻，一键打开 DeepSeek Chat。
+AI 聊天菜单栏快捷工具 —— 在 macOS 菜单栏常驻，一键打开 DeepSeek Chat / 通义千问。
 
 ![preview](Assets/preview.png)
 
 ## 功能特性
 
 - 🔄 **菜单栏常驻** — 启动后驻留在菜单栏，不占用 Dock
-- 💬 **一键打开 DeepSeek Chat** — 左键点击图标即弹出网页窗口
+- 💬 **一键打开聊天页面** — 左键点击图标即弹出网页窗口（DeepSeek Chat / 通义千问可切换）
 - 🕘 **访问历史** — 自动记住上次访问的页面，下次打开直接恢复
 - ⚙️ **开机自启动** — 基于 `SMAppService`，失败自动回退 AppleScript
 - 📐 **窗口大小预设** — 16:9 横屏 / 9:16 竖屏 / 自定义尺寸
@@ -72,7 +72,7 @@ xcrun stapler staple dist/DSBar.app                                    # 装订�
 
 | 操作 | 说明 |
 |------|------|
-| 左键点击菜单栏图标 | 弹出 / 关闭 DeepSeek Chat 窗口 |
+| 左键点击菜单栏图标 | 弹出 / 关闭聊天窗口 |
 | 右键点击菜单栏图标 | 显示上下文菜单 |
 | 上下文菜单 → 打开 | 与左键点击行为一致 |
 | 上下文菜单 → 设置 | 打开设置面板 |
@@ -99,6 +99,18 @@ xcrun stapler staple dist/DSBar.app                                    # 装订�
 
 设置界面提供「打开日志」按钮，可查看完整诊断日志（`/tmp/DSBar/launchatlogin.log`）。
 
+### 聊天站点
+
+设置 → 通用 → 网页，下拉列表选择要打开的站点：
+
+| 站点 | 地址 |
+|------|------|
+| DeepSeek Chat（默认） | https://chat.deepseek.com/ |
+| 通义千问 | https://www.qianwen.com/ |
+
+选择结果持久化保存（`UserDefaults` key：`selectedChatSite`），下次打开弹窗即加载所选站点。
+访问历史按站点分别记录，切换站点不会串页。
+
 ## 项目结构
 
 ```
@@ -108,7 +120,9 @@ ds-bar/
 ├── Sources/
 │   └── DSBar/
 │       ├── DSBarApp.swift           # 应用入口
-│       ├── AppConstants.swift       # 全局常量（版本号、尺寸、URL、UserDefaults keys）
+│       ├── AppConstants.swift       # 全局常量（版本号、尺寸、UserDefaults keys）
+│       ├── ChatSite.swift           # 支持的聊天站点（名称 / 地址 / 允许域名）
+│       ├── ChatSiteManager.swift    # 站点选择持久化
 │       ├── AppDelegate.swift        # 应用代理：状态栏、Popover、窗口、安装引导
 │       ├── WebViewManager.swift     # WKWebView 工厂 + 导航代理 + 错误页
 │       ├── WindowSizeManager.swift  # 窗口尺寸预设与持久化（带防抖）
@@ -141,7 +155,7 @@ ds-bar/
 
 ## 安全说明
 
-- WebView 导航限制在 `deepseek.com` 及其子域名，外部链接交给默认浏览器打开
+- WebView 导航限制在当前所选站点的域名及其子域名，外部链接交给默认浏览器打开
 - 未开启 ATS 例外（`NSAllowsArbitraryLoads`），仅访问 HTTPS 站点
 
 ## License

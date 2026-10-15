@@ -26,6 +26,23 @@
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<!-- App Transport Security：默认全部强制 HTTPS。
+	     仅对 qianwen.com 放行明文 —— 该站裸域会 301 到 http://www.qianwen.com/。
+	     例外只覆盖这一个域名及其子域名；注意 ATS 同样作用于 WebView 加载的子资源，
+	     所以这里不用 NSAllowsArbitraryLoadsInWebContent 全局放宽。 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>qianwen.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 hy. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
