@@ -97,11 +97,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 } else {
                     webView = createWebView(urlString: NavigationHistoryManager.shared.urlToLoad())
                     popoverWebView = webView
+                    // 视图只在这里挂载一次：每次打开都重新赋值会让页面走一遍
+                    // hidden → visible 的切换并触发重新合成，弹出首帧会卡顿
+                    popover.contentViewController?.view = webView
                 }
                 loadedSite = site
 
+                // 仅在尺寸变化时调整 frame，避免无谓的布局和网页 reflow
+                if webView.frame.size != size {
                 webView.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
-                popover.contentViewController?.view = webView
+                }
 
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             }

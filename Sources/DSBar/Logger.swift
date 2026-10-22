@@ -49,6 +49,10 @@ enum Logger {
 
     // MARK: - Internal
 
+    /// 文件写入串行队列：日志调用可能出现在主线程的动画/导航热路径上，
+    /// 同步的 open/seek/write 会阻塞 UI，这里统一放到后台队列
+    private static let writeQueue = DispatchQueue(label: "com.deepseek.dsbar.logger", qos: .utility)
+
     private static func log(level: Level, message: String, category: String) {
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .medium)
         let line = "[\(category) \(timestamp)] [\(level.rawValue)] \(message)"
@@ -56,8 +60,10 @@ enum Logger {
         // 输出到控制台
         print(line)
 
-        // 写入文件
-        writeToLog(line + "\n", category: category)
+        // 写入文件（异步，保持调用顺序由串行队列保证）
+        writeQueue.async {
+            writeToLog(line + "\n", category: category)
+        }
     }
 
     private static func writeToLog(_ text: String, category: String) {
