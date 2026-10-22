@@ -105,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
                 // 仅在尺寸变化时调整 frame，避免无谓的布局和网页 reflow
                 if webView.frame.size != size {
-                webView.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
+                    webView.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
                 }
 
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -117,22 +117,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     /// 弹窗的窗口层级默认高于输入法候选窗：在 webview 里输入中文时，
     /// 候选词列表会被弹窗自己盖住，看不见候选词。
-    /// 展示完成后把弹窗降到 .floating：仍浮在其它 App 的普通窗口之上（弹窗窗口是
+    /// 把弹窗降到 .floating：仍浮在其它 App 的普通窗口之上（弹窗窗口是
     /// 非激活面板，本 App 没被激活时 .normal 会被前台 App 的窗口盖住），
     /// 但低于输入法候选窗，候选词就能回到弹窗之上。
-    func popoverDidShow(_ notification: Notification) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self,
-                  let window = self.popover.contentViewController?.view.window else { return }
-            window.level = .floating
-            Logger.debug("popover shown: level=\(window.level.rawValue) isShown=\(self.popover.isShown)", category: "Popover")
+    ///
+    /// 必须在 willShow 阶段设置：show 的弹出动画开始后再改窗口层级，
+    /// WindowServer 会重新排序、重新合成，动画期间表现为卡顿/掉帧。
+    func popoverWillShow(_ notification: Notification) {
+        popover.contentViewController?.view.window?.level = .floating
+    }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-                guard let self = self,
-                      let window = self.popover.contentViewController?.view.window else { return }
-                Logger.debug("popover +1s: level=\(window.level.rawValue) visible=\(window.isVisible) isShown=\(self.popover.isShown)",
-                             category: "Popover")
-            }
+    func popoverDidShow(_ notification: Notification) {
+        // 兜底：极少数情况下 willShow 时弹窗窗口尚未挂载
+        if let window = popover.contentViewController?.view.window,
+           window.level != .floating {
+            window.level = .floating
         }
     }
 
