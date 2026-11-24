@@ -7,6 +7,7 @@ import Foundation
 enum ChatSite: String, CaseIterable, Identifiable {
     case deepseek
     case qianwen
+    case qwen
 
     var id: String { rawValue }
 
@@ -15,6 +16,7 @@ enum ChatSite: String, CaseIterable, Identifiable {
         switch self {
         case .deepseek: return "DeepSeek Chat"
         case .qianwen:  return "通义千问"
+        case .qwen:     return "Qwen Chat"
         }
     }
 
@@ -28,6 +30,8 @@ enum ChatSite: String, CaseIterable, Identifiable {
             // 这一跳是明文 HTTP，会被 App Transport Security 拦截导致加载失败。
             // www 主机直接以 HTTPS 返回 200，没有这一跳。
             return "https://www.qianwen.com/"
+        case .qwen:
+            return "https://chat.qwen.ai/"
         }
     }
 
@@ -40,6 +44,9 @@ enum ChatSite: String, CaseIterable, Identifiable {
         case .qianwen:
             // 登录/授权走阿里账号体系（待实测确认，若登录被踢到浏览器再补域名）
             return ["qianwen.com", "aliyun.com"]
+        case .qwen:
+            // 登录可能走 Google/GitHub 等第三方 OAuth（待实测确认，若登录被踢到浏览器再补域名）
+            return ["chat.qwen.ai", "qwen.ai"]
         }
     }
 }
